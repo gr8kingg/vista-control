@@ -1,0 +1,21 @@
+{
+  "name": "VistaControl",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^5.0.2",
+    "electron-packager": "^13.1.1",
+    "electron-rebuild": "^1.8.5"
+  },
+  "dependencies": {
+    "applescript": "^1.0.0",
+    "express": "^4.17.1",
+    "socket.io": "^2.2.0"
+  }
+}

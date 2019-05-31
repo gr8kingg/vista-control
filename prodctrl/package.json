@@ -1,0 +1,21 @@
+{
+  "name": "prodctrl",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^5.0.2",
+    "electron-packager": "^13.1.1",
+    "electron-rebuild": "^1.8.5"
+  },
+  "dependencies": {
+    "lodash": "^4.17.11",
+    "socket.io-client": "^2.2.0",
+    "ws": "^7.0.0"
+  }
+}

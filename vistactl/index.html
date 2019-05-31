@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Vista Control</title>
+  </head>
+  <body>
+    <h1>Log:</h1>
+    <div id="logout"></div>
+
+    <script>
+    const {ipcRenderer} = require('electron');
+
+    ipcRenderer.on('log', (event, data) => {
+      var div = document.getElementById('logout');
+      div.innerHTML += data + "<br />";
+            //alert(data); // prints 'do something for me'
+    });
+    </script>
+  </body>
+</html>
