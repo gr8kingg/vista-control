@@ -5,16 +5,50 @@
     <title>Vista Control</title>
   </head>
   <body>
-    <h1>Log:</h1>
-    <div id="logout"></div>
-
+    <h3>Status</h3>
+    ProPresenter: <span id='ppstatus'>Disconnected</span>
+    <h3>Setup</h3>
+    Server Port: <input type="text" id="svrport" name="svrport" value="3000" /><br />
+    ProPresenter Enabled: <input type="checkbox" id="ppenabled" name="ppenabled" checked /><br />
+    ProPresenter IP: <input type="text" id="ppip" name="ppip" value="localhost" /><br />
+    ProPresenter Port: <input type="text" id="ppport" name="ppport" value="58109" /><br />
+    ProPresenter Password: <input type="text" id="pppwd" name="pppwd" value="password" /><br />
+    ProPresenter Autoplay Next Cue Video Time: <input type="text"  id="ppap" name="ppap" value="3"/> Seconds (-1 disable)<br />
+    <button id="updateBtn" type="button">Update</button>
+    <h3>Log:</h3>
+    <textarea rows="15" cols="60" name="description" readonly id="logoutput"></textarea>
     <script>
     const {ipcRenderer} = require('electron');
 
+    ipcRenderer.on('status', (event, data) => {
+      document.getElementById('ppstatus').innerHTML = data.ppconnected ? "Connected" : "Disconnected";
+    });
+
     ipcRenderer.on('log', (event, data) => {
-      var div = document.getElementById('logout');
-      div.innerHTML += data + "<br />";
-            //alert(data); // prints 'do something for me'
+      var logoutput = document.getElementById('logoutput');
+      var currentLog = logoutput.value;
+      currentLog += data + '\n';
+      var logLines = currentLog.split(/\r\n|\r|\n/);
+      if(logLines.count > 40) {
+        logLines = logLines.slice(logLines.count - 40);
+        currentLog = logLines.join('\n');
+      }
+      logoutput.value = currentLog;
+      logoutput.scrollTop = logoutput.scrollHeight;
+    });
+
+    const updateBtn = document.getElementById('updateBtn');
+
+    updateBtn.addEventListener('click', function () {
+      var updateData = {
+        serverPort: document.getElementById('svrport').value,
+        ppEnabled: document.getElementById('ppenabled').checked,
+        ppIp: document.getElementById('ppip').value,
+        ppPort: document.getElementById('ppport').value,
+        ppPwd: document.getElementById('pppwd').value,
+        ppAutoPlay: document.getElementById('ppap').value,
+      };
+      ipcRenderer.send('update', updateData);
     });
     </script>
   </body>
