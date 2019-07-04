@@ -48,6 +48,17 @@ var lastCommand = new Promise((res,rej) => {
   res();
 });
 
+ipcMain.on('loaded', (event,arg) => {
+  var defaultsToSend = {
+    serverPort: store.get('serverPort', 3000),
+    ppEnabled: store.get('ppEnabled', true),
+    ppIp: store.get('ppIp', 'localhost'),
+    ppPort: store.get('ppPort','58109'),
+    ppPwd: store.get('ppPwd',"password"),
+  }
+  mainWindow.webContents.send('loadedDefaults', defaultsToSend);
+});
+
 ipcMain.on('testCmd', (event,arg) => {
   log('testing command ' + arg.cmd);
 
@@ -108,6 +119,16 @@ var vistaMidi = (msg) => {
   if(msg === 'ra') {
     log('sending midi release all');
     output.sendMessage([0xF0, 0x7F, 0x01, 0x02, 0x01, 0x0A, 0xF7]);
+  } else if (_.startsWith(msg,'x')) {
+    // v-w2
+    var cluelist = msg.substring(1);
+    log('sending midi close cuelist ' + cluelist);
+    var cmdToSend = [0xF0, 0x7F, 0x01, 0x02, 0x01, 0x1C];
+    for (var i = 0; i < cluelist.length; i++) {
+      cmdToSend.push(cluelist.charCodeAt(i));
+    }
+    cmdToSend.push(0xF7)
+    output.sendMessage(cmdToSend);
   } else if (_.startsWith(msg,'w')) {
     // v-w2
     var cluelist = msg.substring(1);
@@ -118,7 +139,7 @@ var vistaMidi = (msg) => {
     }
     cmdToSend.push(0xF7)
     output.sendMessage(cmdToSend);
-  } else if (_.startsWith(msg,'q')) {
+  }else if (_.startsWith(msg,'q')) {
     var msg = msg.substring(1);
     //  v-q2w3
     var cluelistAry = msg.split('w');
@@ -149,13 +170,13 @@ var vistaMidi = (msg) => {
       cmdToSend.push(cluelistAry[0].charCodeAt(i));
     }
     if(cluelistAry.length > 1) {
-      log('sending midi open cue' + cluelistAry[0] + ' cuelist ' + cluelistAry[1]);
+      log('sending midi release cue' + cluelistAry[0] + ' cuelist ' + cluelistAry[1]);
       cmdToSend.push(0x00)
       for (var i = 0; i < cluelistAry[1].length; i++) {
         cmdToSend.push(cluelistAry[1].charCodeAt(i));
       }
     } else {
-      log('sending midi open cue' + cluelistAry[0] );
+      log('sending midi relase cue' + cluelistAry[0] );
     }
     cmdToSend.push(0xF7)
     output.sendMessage(cmdToSend);
@@ -191,10 +212,29 @@ var playSlideNotes = (notes) => {
       var vistaCmdToSend = cmd.substring(3);
       vistaMidi(vistaCmdToSend);
     }
+    if(_.startsWith(_.toLower(cmd), "vn-")) {
+      var vistaCmdToSend = cmd.substring(3);
+      nextSlideNotes.push(vistaCmdToSend);
+    }
+    if(_.startsWith(_.toLower(cmd), "ve-")) {
+      var vistaCmdToSend = cmd.substring(3).split('-', 2);
+      if(vistaCmdToSend.length !== 2) {
+        log('unable to parse end video cmd ' + cmd);
+        return
+      }
+      var secondsRemaining = parseInt(vistaCmdToSend[0]);
+      if(!vidEndSlideNodes[secondsRemaining]) {
+        log('set new list of comands for end video at seconds: ' + secondsRemaining)
+        vidEndSlideNodes[secondsRemaining] = [];
+      }
+      log('add cmd end video at seconds: ' + secondsRemaining)
+      vidEndSlideNodes[secondsRemaining].push(vistaCmdToSend[1]);
+    }
   })
 }
 
-var nextSlideNotes = null;
+var nextSlideNotes = [];
+var vidEndSlideNodes = {}
 var propresenterWs;
 var initPPWebSocket = () => {
   if(!store.get('ppEnabled', true)) {
@@ -245,9 +285,10 @@ var initPPWebSocket = () => {
                 //console.log("vid: " + JSON.stringify(message));
                 if(!_.startsWith(message.txt, '-')) {
                   var remainingSeconds = moment(message.txt, 'HHmmss').diff(moment().startOf('day'), 'seconds');
-                  var triggerOnSeconds = parseInt(store.get('ppAutoPlay', '3'));
-                  if(triggerOnSeconds >= 0 && remainingSeconds === triggerOnSeconds && nextSlideNotes) {
-                    playSlideNotes(nextSlideNotes);
+                  if(vidEndSlideNodes[remainingSeconds]) {
+                    vidEndSlideNodes[remainingSeconds].forEach((cmd) => {
+                      vistaMidi(cmd);
+                    })
                   }
                 }
                 //add support for video countdowns
@@ -258,7 +299,13 @@ var initPPWebSocket = () => {
                 let currentSlideNotes = message.ary[2].txt;
                 //let nextSlide = message.ary[1].txt;
                 //let nextSlideNotes = message.ary[3].txt;
-                              
+                if(nextSlideNotes.length > 0)   {
+                  nextSlideNotes.forEach((n) => {
+                    vistaMidi(n);
+                  })
+                }   
+                nextSlideNotes = [];
+                vidEndSlideNodes = {};         
                 log("slide notes " + currentSlideNotes);
                 playSlideNotes(currentSlideNotes);
                 

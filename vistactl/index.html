@@ -16,7 +16,6 @@
     ProPresenter IP: <input type="text" id="ppip" name="ppip" value="localhost" /><br />
     ProPresenter Port: <input type="text" id="ppport" name="ppport" value="58109" /><br />
     ProPresenter Password: <input type="text" id="pppwd" name="pppwd" value="password" /><br />
-    ProPresenter Autoplay Next Cue Video Time: <input type="text"  id="ppap" name="ppap" value="3"/> Seconds (-1 disable)<br />
     <button id="updateBtn" type="button">Update</button>
     <h3>Log:</h3>
     <textarea rows="15" cols="60" name="description" readonly id="logoutput"></textarea>
@@ -49,7 +48,7 @@
         ppIp: document.getElementById('ppip').value,
         ppPort: document.getElementById('ppport').value,
         ppPwd: document.getElementById('pppwd').value,
-        ppAutoPlay: document.getElementById('ppap').value,
+
       };
       ipcRenderer.send('update', updateData);
     });
@@ -59,6 +58,14 @@
     testCmdBtn.addEventListener('click', function () {
      
       ipcRenderer.send('testCmd', {cmd:document.getElementById('testCmd').value});
+    });
+    ipcRenderer.send('loaded');
+    ipcRenderer.on('loadedDefaults', (event, data) => {
+      document.getElementById('svrport').value = data.serverPort;
+      document.getElementById('ppenabled').checked = data.ppEnabled;
+      document.getElementById('ppip').value = data.ppIp;
+      document.getElementById('ppport').value = data.ppPort;
+      document.getElementById('pppwd').value = data.ppPwd;
     });
     </script>
   </body>
