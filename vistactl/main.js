@@ -5,7 +5,10 @@ const _ = require('lodash');
 const moment = require('moment');
 const Store = require('electron-store');
 const store = new Store();
+const midi = require('midi');
 
+var output = new midi.output();
+output.openVirtualPort("Vista Control");
 
 const applescript = require('applescript');
 
@@ -27,16 +30,16 @@ function createWindow () {
   expressServer = expressApp.listen(store.get('serverPort', 3000), () => {
     log('App listening on port ' + store.get('serverPort', 3000));
   });
-  initPPWebSocket();
+  setTimeout(initPPWebSocket, 500);
 }
 
 var log = (msg) => {
-  msg = moment().format() + ' ' + msg;
+  msg = moment().format('x') + ' ' + msg;
   mainWindow.webContents.send('log', msg);
 };
 
 var status = (ppconnected) => {
-  mainWindow.webContents.send('status', {
+  mainWindow.webContents.send('ppstatus', {
     ppconnected: ppconnected
   });
 };
@@ -44,6 +47,12 @@ var status = (ppconnected) => {
 var lastCommand = new Promise((res,rej) => {
   res();
 });
+
+ipcMain.on('testCmd', (event,arg) => {
+  log('testing command ' + arg.cmd);
+
+  playSlideNotes(arg.cmd);
+})
 
 ipcMain.on('update', (event, arg) => {
   console.log('received new update ' + JSON.stringify(arg));
@@ -60,37 +69,99 @@ ipcMain.on('update', (event, arg) => {
     propresenterWs.close();
   }
   if(!wasProPresEnabled) {
-    initPPWebSocket();
+    setTimeout(initPPWebSocket, 500);
   }
 
 });
 
 var vistaCmd = (msg) => {
   var script;
+  var activateScript = 'set activeApp to name of first application process whose frontmost is true\nif (activeApp is not equal to "Vista") then\ndo shell script "open -a Vista"\ndelay 0.4\nend if\n';
   if(msg === 'ra') {
-    script = 'tell application "System Events"\ntell application "Vista" to activate\nkey code 111\nend tell';
+    script = 'tell application "System Events"\n' + activateScript + 'key code 111\nend tell';
   } else if (msg === 'play') {
-    script = 'tell application "System Events"\ntell application "Vista" to activate\nkey code 49\nend tell';
+    script = 'tell application "System Events"\n' + activateScript + 'key code 49\nend tell';
   } else if (msg === 'back') {
-    script = 'tell application "System Events"\ntell application "Vista" to activate\nkey code 49 using {control down}\nend tell';
+    script = 'tell application "System Events"\n' + activateScript + 'key code 49 using {control down}\nend tell';
   } else {
-    script = 'tell application "System Events"\ntell application "Vista" to activate\nkey code 51 using {command down}\nkeystroke "' + msg + '"\nkey code 36\nend tell';
+    script = 'tell application "System Events"\n' + activateScript + 'key code 51 using {command down}\nkeystroke "' + msg + '"\nkey code 36\nend tell';
   }
 
   lastCommand.then(() => {
     return new Promise((res,rej) => {
+      log('sending cmd');
       applescript.execString(script, (err, rtn) => {
         if (err) {
           log('error sending applescript ' + err);
           res();
           return;
         }
-        log('Sent');
+        log('Sent ' + msg + ' rtn ' + rtn);
         res();
         
       });
     });
   })
+}
+
+var vistaMidi = (msg) => {
+  if(msg === 'ra') {
+    log('sending midi release all');
+    output.sendMessage([0xF0, 0x7F, 0x01, 0x02, 0x01, 0x0A, 0xF7]);
+  } else if (_.startsWith(msg,'w')) {
+    // v-w2
+    var cluelist = msg.substring(1);
+    log('sending midi open cuelist ' + cluelist);
+    var cmdToSend = [0xF0, 0x7F, 0x01, 0x02, 0x01, 0x1B];
+    for (var i = 0; i < cluelist.length; i++) {
+      cmdToSend.push(cluelist.charCodeAt(i));
+    }
+    cmdToSend.push(0xF7)
+    output.sendMessage(cmdToSend);
+  } else if (_.startsWith(msg,'q')) {
+    var msg = msg.substring(1);
+    //  v-q2w3
+    var cluelistAry = msg.split('w');
+
+    
+    var cmdToSend = [0xF0, 0x7F, 0x01, 0x02, 0x01, 0x01];
+    for (var i = 0; i < cluelistAry[0].length; i++) {
+      cmdToSend.push(cluelistAry[0].charCodeAt(i));
+    }
+    if(cluelistAry.length > 1) {
+      log('sending midi open cue' + cluelistAry[0] + ' cuelist ' + cluelistAry[1]);
+      cmdToSend.push(0x00)
+      for (var i = 0; i < cluelistAry[1].length; i++) {
+        cmdToSend.push(cluelistAry[1].charCodeAt(i));
+      }
+    } else {
+      log('sending midi open cue' + cluelistAry[0]);
+    }
+    cmdToSend.push(0xF7)
+    output.sendMessage(cmdToSend);
+  } else if (_.startsWith(msg,'k')) {
+    var msg = msg.substring(1);
+    //  v-k2w3
+    var cluelistAry = msg.split('w');
+
+    var cmdToSend = [0xF0, 0x7F, 0x01, 0x02, 0x01, 0x0B];
+    for (var i = 0; i < cluelistAry[0].length; i++) {
+      cmdToSend.push(cluelistAry[0].charCodeAt(i));
+    }
+    if(cluelistAry.length > 1) {
+      log('sending midi open cue' + cluelistAry[0] + ' cuelist ' + cluelistAry[1]);
+      cmdToSend.push(0x00)
+      for (var i = 0; i < cluelistAry[1].length; i++) {
+        cmdToSend.push(cluelistAry[1].charCodeAt(i));
+      }
+    } else {
+      log('sending midi open cue' + cluelistAry[0] );
+    }
+    cmdToSend.push(0xF7)
+    output.sendMessage(cmdToSend);
+  } else {
+    log('unknown command ' + msg)
+  }
 }
 
 app.on('ready', () => {
@@ -101,7 +172,7 @@ expressApp.get('/', (req, res) => res.send('Hello World!'))
 
 expressApp.get('/ctl', (req, res) => {
   if(req.query.cmd) {
-    vistaCmd(req.query.cmd);
+    playSlideNotes(req.query.cmd);
   }
   res.send('ok');
 })
@@ -115,6 +186,10 @@ var playSlideNotes = (notes) => {
       
       var vistaCmdToSend = cmd.substring(2);
       vistaCmd(vistaCmdToSend);
+    }
+    if(_.startsWith(_.toLower(cmd), "vm-")) {
+      var vistaCmdToSend = cmd.substring(3);
+      vistaMidi(vistaCmdToSend);
     }
   })
 }
@@ -179,10 +254,10 @@ var initPPWebSocket = () => {
                 break;
             case "fv":
                 log("got message " + JSON.stringify(message));
-                let currentSlide = message.ary[0].txt;
+                //let currentSlide = message.ary[0].txt;
                 let currentSlideNotes = message.ary[2].txt;
-                let nextSlide = message.ary[1].txt;
-                nextSlideNotes = message.ary[3].txt;
+                //let nextSlide = message.ary[1].txt;
+                //let nextSlideNotes = message.ary[3].txt;
                               
                 log("slide notes " + currentSlideNotes);
                 playSlideNotes(currentSlideNotes);

@@ -7,6 +7,9 @@
   <body>
     <h3>Status</h3>
     ProPresenter: <span id='ppstatus'>Disconnected</span>
+    <h3>Test command</h3>
+    <input type="text" id="testCmd" name="testCmd" value="" /><br />
+    <button id="testCmdBtn" type="button">Test</button>
     <h3>Setup</h3>
     Server Port: <input type="text" id="svrport" name="svrport" value="3000" /><br />
     ProPresenter Enabled: <input type="checkbox" id="ppenabled" name="ppenabled" checked /><br />
@@ -20,7 +23,7 @@
     <script>
     const {ipcRenderer} = require('electron');
 
-    ipcRenderer.on('status', (event, data) => {
+    ipcRenderer.on('ppstatus', (event, data) => {
       document.getElementById('ppstatus').innerHTML = data.ppconnected ? "Connected" : "Disconnected";
     });
 
@@ -49,6 +52,13 @@
         ppAutoPlay: document.getElementById('ppap').value,
       };
       ipcRenderer.send('update', updateData);
+    });
+
+    const testCmdBtn = document.getElementById('testCmdBtn');
+
+    testCmdBtn.addEventListener('click', function () {
+     
+      ipcRenderer.send('testCmd', {cmd:document.getElementById('testCmd').value});
     });
     </script>
   </body>
