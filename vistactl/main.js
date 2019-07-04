@@ -10,8 +10,6 @@ const midi = require('midi');
 var output = new midi.output();
 output.openVirtualPort("Vista Control");
 
-const applescript = require('applescript');
-
 var mainWindow;
 var expressServer;
 function createWindow () {
@@ -85,35 +83,6 @@ ipcMain.on('update', (event, arg) => {
 
 });
 
-var vistaCmd = (msg) => {
-  var script;
-  var activateScript = 'set activeApp to name of first application process whose frontmost is true\nif (activeApp is not equal to "Vista") then\ndo shell script "open -a Vista"\ndelay 0.4\nend if\n';
-  if(msg === 'ra') {
-    script = 'tell application "System Events"\n' + activateScript + 'key code 111\nend tell';
-  } else if (msg === 'play') {
-    script = 'tell application "System Events"\n' + activateScript + 'key code 49\nend tell';
-  } else if (msg === 'back') {
-    script = 'tell application "System Events"\n' + activateScript + 'key code 49 using {control down}\nend tell';
-  } else {
-    script = 'tell application "System Events"\n' + activateScript + 'key code 51 using {command down}\nkeystroke "' + msg + '"\nkey code 36\nend tell';
-  }
-
-  lastCommand.then(() => {
-    return new Promise((res,rej) => {
-      log('sending cmd');
-      applescript.execString(script, (err, rtn) => {
-        if (err) {
-          log('error sending applescript ' + err);
-          res();
-          return;
-        }
-        log('Sent ' + msg + ' rtn ' + rtn);
-        res();
-        
-      });
-    });
-  })
-}
 
 var vistaMidi = (msg) => {
   if(msg === 'ra') {
@@ -203,11 +172,7 @@ var playSlideNotes = (notes) => {
                 
   cmdArr.forEach((cmd) => {
     
-    if(_.startsWith(_.toLower(cmd), "v-")) {
-      
-      var vistaCmdToSend = cmd.substring(2);
-      vistaCmd(vistaCmdToSend);
-    }
+
     if(_.startsWith(_.toLower(cmd), "vm-")) {
       var vistaCmdToSend = cmd.substring(3);
       vistaMidi(vistaCmdToSend);

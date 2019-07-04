@@ -1,8 +1,16 @@
+After running npm install, run
 ./node_modules/.bin/electron-rebuild
 
-Build:
+running before building app
+npm start
+
+Build .app:
 
 ./node_modules/.bin/electron-packager ./
+
+Setup
+Start 
+After starting, if vista is already runbning, you must disable/enable the midi 
 
 
 | Command       | Defn           |
@@ -39,3 +47,6 @@ Send a midi command before the current video ends
 | ve-5-q1w2      | go to cue 1 on cuelist 2 5 seconds before end | 
 
 add "3s before end of vid"
+
+Sending commands from GET Rest xcall
+http://<ip>:3000/ctl?cmd=<command from above>
