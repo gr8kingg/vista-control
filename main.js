@@ -55,6 +55,7 @@ ipcMain.on('loaded', (event,arg) => {
     ppPwd: store.get('ppPwd',"password"),
   }
   mainWindow.webContents.send('loadedDefaults', defaultsToSend);
+  status(propresenterWs && wsConnected);
 });
 
 ipcMain.on('testCmd', (event,arg) => {
@@ -75,6 +76,7 @@ ipcMain.on('update', (event, arg) => {
     log('App listening on port ' + store.get('serverPort', 3000));
   });
   if(propresenterWs) {
+    wsConnected = false;
     propresenterWs.close();
   }
   if(!wasProPresEnabled) {
@@ -200,6 +202,7 @@ var playSlideNotes = (notes) => {
 
 var nextSlideNotes = [];
 var vidEndSlideNodes = {}
+var wsConnected = false;
 var propresenterWs;
 var initPPWebSocket = () => {
   if(!store.get('ppEnabled', true)) {
@@ -213,12 +216,14 @@ var initPPWebSocket = () => {
   propresenterWs.on('close', () => {
     log('closed');
     status(false);
+    wsConnected = false;
     setTimeout(initPPWebSocket, 10000);
   });
 
   propresenterWs.on('open', () => {
     log('connected to propresenter');
     status(true);
+    wsConnected = true;
     propresenterWs.send(JSON.stringify({"pwd":store.get('ppPwd',"password"),"ptl":610,"acn":"ath"}));
 
   })
@@ -247,10 +252,19 @@ var initPPWebSocket = () => {
                 //add support for timers/clocks
                 break;
             case "vid":
-                //console.log("vid: " + JSON.stringify(message));
+                log("vid: " + JSON.stringify(message));
                 if(!_.startsWith(message.txt, '-')) {
-                  var remainingSeconds = moment(message.txt, 'HHmmss').diff(moment().startOf('day'), 'seconds');
+                  
+                  var remainingSeconds
+                  if(message.txt.split(":").length === 3) {
+                    remainingSeconds = parseInt(moment(message.txt, 'HHmmss').diff(moment().startOf('day'), 'seconds'));
+                  } else {
+                    remainingSeconds = parseInt(moment("0:" + message.txt, 'HHmmss').diff(moment().startOf('day'), 'seconds'));
+                  }
+                  
+                  log('checking vid time at ' +remainingSeconds + JSON.stringify(vidEndSlideNodes));
                   if(vidEndSlideNodes[remainingSeconds]) {
+                    log('end of video commands found; firing');
                     vidEndSlideNodes[remainingSeconds].forEach((cmd) => {
                       vistaMidi(cmd);
                     })
@@ -260,8 +274,15 @@ var initPPWebSocket = () => {
                 break;
             case "fv":
                 log("got message " + JSON.stringify(message));
+                
                 //let currentSlide = message.ary[0].txt;
-                let currentSlideNotes = message.ary[2].txt;
+                let currentSlideNotesObject = _.find(message.ary, {'acn':'csn'});
+
+                if(!currentSlideNotesObject){
+                  log('missing current slide nodes');
+                  return;
+                }
+                let currentSlideNotes = currentSlideNotesObject.txt;
                 //let nextSlide = message.ary[1].txt;
                 //let nextSlideNotes = message.ary[3].txt;
                 if(nextSlideNotes.length > 0)   {

@@ -45,6 +45,13 @@ curl http://localhost:3000/ctl?cmd=vm-q2w1
 
 # Commands
 ## Basic commands
+Start with 'vm-' and then the command to send
+
+'ra' is release all<br/>
+'q<cue id>w<cuelist id>' go cue in cuelist <br/>
+'q0w<cuelist id>' go to next cue in cuelist<br/>
+'k0q<cuelist id>' release cluelist 
+
 | Command      | Defn           |
 | ------------ |----------------| 
 | vm-ra        | Release all | 
@@ -54,15 +61,19 @@ curl http://localhost:3000/ctl?cmd=vm-q2w1
 | vm-k0w2      | release cuelist 2 |
 
 ## Context based commands
+You can 'add' more than 1 cuelists to the current context. 
+
 | Command    | Defn           |
 | ---------- |----------------| 
-| vm-w2      | set context to cuelist 2 | 
+| vm-w2      | set/add context to cuelist 2 | 
 | vm-q3      | go to cue 3 on cuelist 2 | 
 | vm-q0      | go to next queue on cuelist 2 |
 | vm-k0      | go to next queue on cuelist 2 |
 | vm-x2      | stop context cuelist 2 |
 
 ## Send a midi command on the next loaded slide
+Change the prefix to 'vn-' 
+
 | Command      | Defn           |
 | ------------ |----------------| 
 | vn-ra        | Release all | 
@@ -72,11 +83,15 @@ curl http://localhost:3000/ctl?cmd=vm-q2w1
 | vn-k0w2      | release cuelist 2 |
 
 ## Send a midi command before the current video ends
+Change the prefix to 've-' <br/>
+then add '<seconds>-' where seconds is the number of seconds before the video ends<br/>
+then add the command
+
 | Command       | Defn           |
 | ------------- |----------------| 
 | ve-3-ra       | Release all 3 seconds before end | 
-| ve-3-q1w2     | go to cue 1 on cuelist 2 3 seconds before end | 
-| ve-5-q1w2     | go to cue 1 on cuelist 2 5 seconds before end | 
+| ve-3-q1w2     | go to cue 1 on cuelist 2, 3 seconds before end | 
+| ve-5-q1w2     | go to cue 1 on cuelist 2, 5 seconds before end | 
 
 # Sending commands from GET Rest call
 Use the foloowing GET rest call
