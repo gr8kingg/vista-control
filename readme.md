@@ -48,9 +48,9 @@ curl http://localhost:3000/ctl?cmd=vm-q2w1
 Start with 'vm-' and then the command to send
 
 'ra' is release all<br/>
-'q<cue id>w<cuelist id>' go cue in cuelist <br/>
-'q0w<cuelist id>' go to next cue in cuelist<br/>
-'k0q<cuelist id>' release cluelist 
+'q{cue id}w{cuelist id}' go cue in cuelist <br/>
+'q0w{cuelist id}' go to next cue in cuelist<br/>
+'k0q{cuelist id}' release cluelist 
 
 | Command      | Defn           |
 | ------------ |----------------| 
@@ -84,7 +84,7 @@ Change the prefix to 'vn-'
 
 ## Send a midi command before the current video ends
 Change the prefix to 've-' <br/>
-then add '<seconds>-' where seconds is the number of seconds before the video ends<br/>
+then add '{seconds}-' where seconds is the number of seconds before the video ends<br/>
 then add the command
 
 | Command       | Defn           |

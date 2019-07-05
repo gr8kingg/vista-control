@@ -33,7 +33,11 @@ function createWindow () {
 
 var log = (msg) => {
   msg = moment().format('x') + ' ' + msg;
-  mainWindow.webContents.send('log', msg);
+  try {
+    mainWindow.webContents.send('log', msg);
+  } catch {
+    // ignore - window may be closing
+  }
 };
 
 var status = (ppconnected) => {
@@ -258,8 +262,10 @@ var initPPWebSocket = () => {
                   var remainingSeconds
                   if(message.txt.split(":").length === 3) {
                     remainingSeconds = parseInt(moment(message.txt, 'HHmmss').diff(moment().startOf('day'), 'seconds'));
-                  } else {
+                  } else if (message.txt.split(":").length === 2) {
                     remainingSeconds = parseInt(moment("0:" + message.txt, 'HHmmss').diff(moment().startOf('day'), 'seconds'));
+                  } else  {
+                    remainingSeconds = parseInt(moment("0:00:" + message.txt, 'HHmmss').diff(moment().startOf('day'), 'seconds'));
                   }
                   
                   log('checking vid time at ' +remainingSeconds + JSON.stringify(vidEndSlideNodes));
