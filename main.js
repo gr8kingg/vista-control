@@ -155,6 +155,10 @@ var vistaMidi = (msg) => {
     }
     cmdToSend.push(0xF7)
     output.sendMessage(cmdToSend);
+  } else if (_.startsWith(msg,'h')) {
+    // already handled 
+  } else if (_.startsWith(msg,'e')) {
+    // already handled 
   } else {
     log('unknown command ' + msg)
   }
@@ -291,13 +295,21 @@ var initPPWebSocket = () => {
                 let currentSlideNotes = currentSlideNotesObject.txt;
                 //let nextSlide = message.ary[1].txt;
                 //let nextSlideNotes = message.ary[3].txt;
-                if(nextSlideNotes.length > 0)   {
-                  nextSlideNotes.forEach((n) => {
-                    vistaMidi(n);
-                  })
-                }   
-                nextSlideNotes = [];
-                vidEndSlideNodes = {};         
+                if(_.find(_.split(currentSlideNotes,'\n'), (row) => { return _.startsWith(_.toLower(row), 'vm-h')})) {
+                  log('clearing the next slide commands without playback');
+                  nextSlideNotes = [];
+                  vidEndSlideNodes = {};  
+                } else if(_.find(_.split(currentSlideNotes,'\n'), (row) => { return _.startsWith(_.toLower(row), 'vm-h')})) {
+                  log('holding playback of next slide notes till next slide');
+                } else {
+                  if(nextSlideNotes.length > 0)   {
+                    nextSlideNotes.forEach((n) => {
+                      vistaMidi(n);
+                    })
+                  }   
+                  nextSlideNotes = [];
+                  vidEndSlideNodes = {};     
+                }    
                 log("slide notes " + currentSlideNotes);
                 playSlideNotes(currentSlideNotes);
                 

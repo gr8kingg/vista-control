@@ -71,7 +71,7 @@ You can 'add' more than 1 cuelists to the current context.
 | vm-k0      | go to next queue on cuelist 2 |
 | vm-x2      | stop context cuelist 2 |
 
-## Send a midi command on the next loaded slide
+## Queue up a midi command to be played on the next slide change
 Change the prefix to 'vn-' 
 
 | Command      | Defn           |
@@ -81,6 +81,10 @@ Change the prefix to 'vn-'
 | vn-q3w2      | go to cue 3 on cuelist 2 | 
 | vn-q0w2      | go to next queue on cuelist 2 |
 | vn-k0w2      | release cuelist 2 |
+
+If you wish to have a slide hold off on playing the queued up next slide commands, add 'vm-h' to the slide
+If you wish to have a slide clear the queued up next slide commands, add 'vm-e' to the slide
+
 
 ## Send a midi command before the current video ends
 Change the prefix to 've-' <br/>
