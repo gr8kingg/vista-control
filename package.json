@@ -16,7 +16,7 @@
   "dependencies": {
     "electron-store": "^3.2.0",
     "express": "^4.17.1",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.13",
     "midi": "^0.9.5",
     "moment": "^2.24.0",
     "ws": "^7.0.0"
