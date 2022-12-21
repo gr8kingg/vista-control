@@ -59,6 +59,8 @@ Start with 'vm-' and then the command to send
 | vm-q3w2      | go to cue 3 on cuelist 2 | 
 | vm-q0w2      | go to next queue on cuelist 2 |
 | vm-k0w2      | release cuelist 2 |
+| vm-non80     | turn on midi note 80 |
+| vm-noff80    | turn off midi note 80 |
 
 ## Context based commands
 You can 'add' more than 1 cuelists to the current context. 
